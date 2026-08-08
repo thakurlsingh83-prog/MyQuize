@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>THE GRAND QUIZ - GFR 2017 Challenge</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background: #060919; color: #ffffff; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+    .bg-beam { position: fixed; inset: 0; background: radial-gradient(circle at 50% 30%, rgba(20, 50, 120, 0.5) 0%, rgba(6, 9, 25, 0.95) 70%); pointer-events: none; z-index: 0; }
+    header { position: relative; z-index: 10; background: rgba(10, 18, 42, 0.9); border-bottom: 2px solid #ffd700; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .logo-title { font-size: 1.2rem; font-weight: 800; color: #ffd700; text-transform: uppercase; letter-spacing: 1.5px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+    .logo-sub { font-size: 0.75rem; color: #a0c0ff; font-weight: 500; }
+    .progress-box { flex: 1; max-width: 300px; margin: 0 20px; }
+    .progress-bar-bg { background: #101c38; border: 1px solid #ffd700; height: 12px; border-radius: 6px; overflow: hidden; }
+    .progress-bar-fill { background: linear-gradient(90deg, #ff9900, #ffd700); height: 100%; width: 2%; transition: width 0.3s; }
+    .q-count { color: #ffd700; font-weight: bold; font-size: 0.9rem; white-space: nowrap; }
+
+    .main-layout { position: relative; z-index: 10; display: grid; grid-template-columns: 280px 1fr 240px; gap: 15px; padding: 15px; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; }
+    
+    /* Left Panel */
+    .left-panel { background: rgba(12, 23, 52, 0.85); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 15px; }
+    .panel-title { color: #ffd700; font-size: 0.85rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; text-align: center; border-bottom: 1px solid rgba(255, 215, 0, 0.2); padding-bottom: 5px; }
+    .lifelines-container { display: flex; flex-direction: column; gap: 10px; }
+    .lifeline-btn { background: linear-gradient(180deg, #182e66 0%, #0a1533 100%); border: 1.5px solid #ffd700; border-radius: 25px; color: #fff; padding: 10px; font-weight: bold; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .lifeline-btn:hover:not(:disabled) { background: linear-gradient(180deg, #254699 0%, #122252 100%); box-shadow: 0 0 12px rgba(255, 215, 0, 0.6); }
+    .lifeline-btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: #555; }
+    .nav-container { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+    .nav-btn { background: linear-gradient(180deg, #ff9900 0%, #cc7a00 100%); border: none; border-radius: 8px; color: #000; font-weight: bold; padding: 12px; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .nav-btn:hover:not(:disabled) { filter: brightness(1.2); box-shadow: 0 0 12px rgba(255, 153, 0, 0.6); }
+    .nav-btn:disabled { background: #333; color: #777; cursor: not-allowed; }
+
+    /* Center Stage */
+    .center-stage { display: flex; flex-direction: column; gap: 15px; }
+    .q-box { background: linear-gradient(180deg, #0e1e45 0%, #060e24 100%); border: 2px solid #ffd700; border-radius: 15px; padding: 20px; min-height: 120px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 1.05rem; font-weight: 600; line-height: 1.5; color: #fff; box-shadow: 0 0 20px rgba(0, 100, 255, 0.2); position: relative; }
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .opt-btn { background: linear-gradient(180deg, #0f204a 0%, #071028 100%); border: 1.5px solid #4a70be; border-radius: 30px; padding: 12px 18px; color: #fff; font-size: 0.9rem; font-weight: 500; cursor: pointer; text-align: left; display: flex; align-items: center; transition: all 0.2s; position: relative; }
+    .opt-btn:hover:not(:disabled) { border-color: #ffd700; background: linear-gradient(180deg, #183273 0%, #0d1e4a 100%); box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
+    .opt-prefix { color: #ffd700; font-weight: bold; margin-right: 10px; font-size: 1rem; }
+    .opt-btn.correct { background: linear-gradient(180deg, #008000 0%, #004d00 100%) !important; border-color: #00ff00 !important; color: #fff !important; box-shadow: 0 0 15px #00ff00; }
+    .opt-btn.incorrect { background: linear-gradient(180deg, #cc0000 0%, #800000 100%) !important; border-color: #ff3333 !important; color: #fff !important; }
+    .opt-btn:disabled { cursor: default; }
+
+    .explanation-card { background: rgba(10, 20, 45, 0.95); border: 1px solid #ffd700; border-radius: 10px; padding: 15px; display: none; }
+    .exp-status { font-weight: bold; font-size: 1rem; margin-bottom: 5px; }
+    .exp-status.correct { color: #00ff00; }
+    .exp-status.incorrect { color: #ff4d4d; }
+    .exp-rule { color: #ffd700; font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; }
+    .exp-text { font-size: 0.85rem; color: #d0e0ff; line-height: 1.4; }
+
+    /* Right Panel (Prize Tree) */
+    .right-panel { background: rgba(12, 23, 52, 0.85); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; max-height: 600px; overflow-y: auto; }
+    .prize-list { display: flex; flex-direction: column-reverse; gap: 2px; }
+    .prize-item { display: flex; justify-content: space-between; padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; color: #a0a0a0; }
+    .prize-item.active { background: #ff9900; color: #000; font-weight: bold; box-shadow: 0 0 8px #ff9900; }
+    .prize-item.safe-haven { color: #ffd700; font-weight: bold; }
+    .prize-item.completed { color: #50e3c2; }
+
+    /* Modal */
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 100; padding: 20px; }
+    .modal-content { background: #0c1734; border: 2px solid #ffd700; border-radius: 15px; padding: 25px; max-width: 500px; width: 100%; text-align: center; position: relative; }
+    .modal-title { color: #ffd700; font-size: 1.3rem; margin-bottom: 15px; font-weight: bold; }
+    .close-btn { background: #ff9900; border: none; color: #000; font-weight: bold; padding: 8px 20px; border-radius: 5px; margin-top: 15px; cursor: pointer; }
+
+    /* Results Screen */
+    .result-card { display: none; background: #0c1734; border: 2px solid #ffd700; border-radius: 15px; padding: 30px; text-align: center; max-width: 600px; margin: 40px auto; }
+    .res-title { color: #ffd700; font-size: 1.8rem; font-weight: bold; margin-bottom: 10px; }
+    .res-score { font-size: 1.2rem; color: #fff; margin-bottom: 20px; }
+    .res-badge { display: inline-block; padding: 8px 20px; background: #ff9900; color: #000; font-weight: bold; border-radius: 20px; margin-bottom: 20px; }
+
+    @media (max-width: 900px) {
+      .main-layout { grid-template-columns: 1fr; }
+      .right-panel { display: none; }
+      .options-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-beam"></div>
+
+  <header>
+    <div>
+      <div class="logo-title">THE GRAND QUIZ</div>
+      <div class="logo-sub">GFR 2017 FINANCIAL RULES CHALLENGE</div>
+    </div>
+    <div class="progress-box">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
+    </div>
+    <div class="q-count" id="q-counter">Question 1 / 50</div>
+  </header>
+
+  <div class="main-layout" id="quiz-stage">
+    
+    <!-- Left Side Controls -->
+    <div class="left-panel">
+      <div class="panel-title">LIFELINES</div>
+      <div class="lifelines-container">
+        <button class="lifeline-btn" id="life-5050" onclick="use5050()">⚡ 50:50</button>
+        <button class="lifeline-btn" id="life-poll" onclick="usePoll()">📊 AUDIENCE POLL</button>
+        <button class="lifeline-btn" id="life-expert" onclick="useExpert()">🎓 ASK EXPERT</button>
+      </div>
+
+      <div class="panel-title" style="margin-top: 15px;">NAVIGATION</div>
+      <div class="nav-container">
+        <button class="nav-btn" id="prev-btn" onclick="prevQuestion()" disabled>← PREVIOUS</button>
+        <button class="nav-btn" id="next-btn" onclick="nextQuestion()" disabled>NEXT QUESTION →</button>
+      </div>
+    </div>
+
+    <!-- Center Stage -->
+    <div class="center-stage">
+      <div class="q-box" id="question-text">Loading Question...</div>
+
+      <div class="options-grid">
+        <button class="opt-btn" onclick="selectOption(0)"><span class="opt-prefix">A:</span><span id="opt0"></span></button>
+        <button class="opt-btn" onclick="selectOption(1)"><span class="opt-prefix">B:</span><span id="opt1"></span></button>
+        <button class="opt-btn" onclick="selectOption(2)"><span class="opt-prefix">C:</span><span id="opt2"></span></button>
+        <button class="opt-btn" onclick="selectOption(3)"><span class="opt-prefix">D:</span><span id="opt3"></span></button>
+      </div>
+
+      <div class="explanation-card" id="exp-card">
+        <div class="exp-status" id="exp-status"></div>
+        <div class="exp-rule" id="exp-rule"></div>
+        <div class="exp-text" id="exp-text"></div>
+      </div>
+    </div>
+
+    <!-- Right Prize Ladder -->
+    <div class="right-panel">
+      <div class="panel-title" style="margin-bottom: 8px;">PRIZE LADDER</div>
+      <div class="prize-list" id="prize-tree"></div>
+    </div>
+
+  </div>
+
+  <!-- Result Screen -->
+  <div class="result-card" id="result-screen">
+    <div class="res-title">🏆 QUIZ COMPLETED</div>
+    <div class="res-score" id="res-score-text">You answered 0 / 50 correctly</div>
+    <div class="res-badge" id="res-level">Level: Analyzing...</div>
+    <div>
+      <button class="nav-btn" onclick="restartQuiz()">RESTART QUIZ</button>
+    </div>
+  </div>
+
+  <!-- Lifeline Modal -->
+  <div class="modal" id="lifeline-modal">
+    <div class="modal-content">
+      <div class="modal-title" id="modal-title">Lifeline</div>
+      <div id="modal-body" style="font-size: 0.95rem; line-height: 1.5; color: #d0e0ff;"></div>
+      <button class="close-btn" onclick="closeModal()">CLOSE</button>
+    </div>
+  </div>
+
+  <script>
+    const prizes = [
+      "₹1,000", "₹2,000", "₹3,000", "₹5,000", "₹10,000", "₹20,000", "₹40,000", "₹80,000", "₹1,60,000", "₹3,20,000",
+      "₹6,40,000", "₹12,50,000", "₹25,00,000", "₹50,00,000", "₹1 Crore", "₹2 Crore", "₹3 Crore", "₹4 Crore", "₹5 Crore", "₹6 Crore",
+      "₹7 Crore", "₹8 Crore", "₹9 Crore", "₹10 Crore", "₹12 Crore", "₹15 Crore", "₹20 Crore", "₹25 Crore", "₹30 Crore", "₹50 Crore",
+      "₹35 Crore", "₹40 Crore", "₹45 Crore", "₹50 Crore", "₹55 Crore", "₹60 Crore", "₹65 Crore", "₹70 Crore", "₹75 Crore", "₹80 Crore",
+      "₹85 Crore", "₹90 Crore", "₹95 Crore", "₹100 Crore", "₹110 Crore", "₹120 Crore", "₹130 Crore", "₹140 Crore", "₹150 Crore", "₹200 Crore"
+    ];
+
+    const safeHavens = [4, 9, 14, 29, 49];
+
+    // 50 Questions derived directly from GFR 2017 rules
+    const questions = [
+      { q: "Under GFR 2017, which of the following items is explicitly excluded from the definition of 'Goods'?", opts: ["Software and licenses", "Books, publications, and periodicals for a library", "Live stock and machinery", "Transportation and installation services"], ans: 1, rule: "Rule 143", exp: "Rule 143 explicitly states that the term 'goods' excludes books, publications, periodicals, etc., for a library." },
+      { q: "According to fundamental principles of public buying, how should description of procurement subject matter be specified?", opts: ["By specifying a particular trade mark/brand", "Objective, functional, generic, and measurable", "Tailored to match a specific supplier", "Broad and ambiguous"], ans: 1, rule: "Rule 144", exp: "Rule 144(i)(a) mandates descriptions be objective, functional, generic, and measurable without indicating specific trade marks." },
+      { q: "What is the monetary ceiling for direct online purchases on GeM through any available supplier?", opts: ["Up to ₹25,000", "Up to ₹50,000", "Up to ₹1,00,000", "Up to ₹5,00,000"], ans: 1, rule: "Rule 149(i)", exp: "Direct online purchase on GeM can be made up to ₹50,000 through any available supplier meeting required specifications." },
+      { q: "What is the enhanced direct online purchase ceiling on GeM for notified Scientific Ministries/Departments?", opts: ["Up to ₹50,000", "Up to ₹1,00,000", "Up to ₹2,00,000", "Up to ₹5,00,000"], ans: 1, rule: "Rule 149(i) Note", exp: "For notified Scientific Ministries/Departments/Organisations, direct purchase ceiling on GeM is replaced with up to ₹1,00,000." },
+      { q: "Purchases on GeM above ₹50,000 and up to ₹10,00,000 require price comparison among sellers of at least how many manufacturers?", opts: ["Two", "Three", "Four", "Five"], ans: 1, rule: "Rule 149(ii)", exp: "Rule 149(ii) requires obtaining lowest price among available sellers of at least three different manufacturers on GeM." },
+      { q: "Within how many days of Budget approval must Ministries project their Annual Procurement Plan on GeM?", opts: ["15 days", "30 days", "45 days", "60 days"], ans: 1, rule: "Rule 149(vi)", exp: "Ministries/Departments shall project their Annual Procurement Plan on GeM portal within 30 days of Budget approval." },
+      { q: "For goods not available on GeM, registered suppliers can be registered by a Ministry/Department for a fixed period of:", opts: ["6 months to 1 year", "1 to 3 years", "3 to 5 years", "5 to 10 years"], ans: 1, rule: "Rule 150(iii)", exp: "Suppliers will be registered for a fixed period between 1 to 3 years depending on the nature of goods." },
+      { q: "What is the maximum debarment period for a bidder convicted under the Prevention of Corruption Act, 1988?", opts: ["1 year", "2 years", "Not exceeding 3 years", "Permanently"], ans: 2, rule: "Rule 151(ii)", exp: "Debarment for offences under Prevention of Corruption Act shall not exceed three years." },
+      { q: "A procuring entity may debar a bidder for breaching the code of integrity for a period not exceeding:", opts: ["1 year", "2 years", "3 years", "5 years"], ans: 1, rule: "Rule 151(iii)", exp: "A procuring entity may debar a bidder for up to two years for code of integrity breaches." },
+      { q: "What minimum percentage of mandatory procurement of handloom textiles must be made from KVIC/Handloom Clusters?", opts: ["10%", "15%", "20%", "25%"], ans: 2, rule: "Rule 153(i)", exp: "It is mandatory to procure at least 20% of required textiles from items of handloom origin via KVIC/Handloom clusters." },
+      { q: "What is the monetary limit per occasion for purchasing non-GeM goods without inviting quotations?", opts: ["Up to ₹15,000", "Up to ₹25,000", "Up to ₹50,000", "Up to ₹1,00,000"], ans: 2, rule: "Rule 154", exp: "Purchase of goods up to ₹50,000 on each occasion may be made without inviting quotations on recording prescribed certificate." },
+      { q: "For Scientific Ministries, what is the enhanced limit under Rule 154 for purchasing research goods without quotations?", opts: ["Up to ₹1,00,000", "Up to ₹2,00,000", "Up to ₹5,00,000", "Up to ₹10,00,000"], ans: 1, rule: "Rule 154 Note", exp: "Notified Scientific Departments have an enhanced limit of up to ₹2,00,000 per occasion for research consumables/equipment." },
+      { q: "What is the required composition of the Local Purchase Committee under Rule 155?", opts: ["Two members", "Three members of an appropriate level", "Five members", "Four members"], ans: 1, rule: "Rule 155", exp: "Local Purchase Committee consists of three members of an appropriate level as decided by Head of Department." },
+      { q: "What is the standard financial threshold for procurement of non-GeM goods through a Local Purchase Committee?", opts: ["Above ₹25,000 to ₹2.5 Lakhs", "Above ₹50,000 and up to ₹5,00,000", "Above ₹1 Lakh to ₹10 Lakhs", "Above ₹50,000 to ₹2.5 Lakhs"], ans: 1, rule: "Rule 155", exp: "Rule 155 covers purchase of goods costing above ₹50,000 and up to ₹5,00,000 on each occasion." },
+      { q: "Dividing a demand into small quantities to make piecemeal purchases to avoid higher sanction is prohibited under:", opts: ["Rule 144", "Rule 150", "Rule 157", "Rule 165"], ans: 2, rule: "Rule 157", exp: "Rule 157 mandates that demand for goods should not be divided to avoid obtaining sanction of higher authority." },
+      { q: "Exemption from mandatory e-publishing on grounds of national security requires approval of:", opts: ["Head of Office", "Secretary of Ministry with concurrence of Financial Advisor", "CVC", "Department of Expenditure"], ans: 1, rule: "Rule 159(ii)", exp: "Exemption on national security grounds must be approved by Ministry Secretary with concurrence of Financial Advisor." },
+      { q: "Advertised Tender Enquiry should ordinarily be used for procurement of goods of estimated value of:", opts: ["₹25 Lakhs and above", "₹50 Lakhs and above", "₹1 Crore and above", "₹2 Crores and above"], ans: 1, rule: "Rule 161(i)", exp: "Advertised Tender Enquiry should be used for procurement of goods of estimated value of ₹50 lakhs and above." },
+      { q: "Under Rule 161(iv)(b), no Global Tender Enquiry (GTE) shall be invited for tenders up to what threshold?", opts: ["₹50 Crore", "₹100 Crore", "₹200 Crore", "₹500 Crore"], ans: 2, rule: "Rule 161(iv)(b)", exp: "No Global Tender Enquiry (GTE) shall be invited for tenders up to ₹200 crore unless explicit relaxation is approved." },
+      { q: "Minimum time allowed for submission of bids in Advertised Tender Enquiry when bids are invited from abroad is:", opts: ["Two weeks", "Three weeks", "Four weeks", "Six weeks"], ans: 2, rule: "Rule 161(vi)", exp: "Where bids are contemplated from abroad, minimum period for bid submission should be four weeks." },
+      { q: "What is the standard monetary threshold up to which Limited Tender Enquiry (LTE) is adopted?", opts: ["Up to ₹25 Lakhs", "Up to ₹50 Lakhs", "Up to ₹1 Crore", "Up to ₹2 Crores"], ans: 1, rule: "Rule 162(i)", exp: "Limited Tender Enquiry method may be adopted when estimated value of goods to be procured is up to ₹50 lakhs." },
+      { q: "In Limited Tender Enquiry (LTE), what is the minimum number of supplier firms to send bidding documents to?", opts: ["More than 2", "More than 3", "At least 5", "At least 7"], ans: 1, rule: "Rule 162(i)", exp: "The number of supplier firms in Limited Tender Enquiry should be more than three." },
+      { q: "Which of the following is NOT a valid ground for executing Single Tender Enquiry under Rule 166?", opts: ["Sole manufacturer availability", "Emergency procurement", "Standardization of spare parts", "To avoid publishing tender on CPPP"], ans: 3, rule: "Rule 166", exp: "Single Tender Enquiry is permitted only for sole manufacturer, emergency, or equipment standardization." },
+      { q: "Proprietary Article Certificate (PAC) is required before procuring goods under which rule?", opts: ["Rule 161", "Rule 162", "Rule 166", "Rule 163"], ans: 2, rule: "Rule 166", exp: "PAC is prescribed for single-source purchases under Rule 166(i) and 166(iii)." },
+      { q: "Which Chapter of a standard Bidding Document contains the 'Price Schedule'?", opts: ["Chapter-3", "Chapter-4", "Chapter-5", "Chapter-6"], ans: 2, rule: "Rule 168", exp: "Rule 168 lists Chapter-5 as Price Schedule (to be utilized by bidders for quoting prices)." },
+      { q: "What is the standard percentage range of estimated value for Bid Security (Earnest Money Deposit)?", opts: ["1% to 3%", "2% to 5%", "5% to 10%", "10% to 15%"], ans: 1, rule: "Rule 170(i)", exp: "Amount of bid security should ordinarily range between two percent to five percent of estimated value." },
+      { q: "Which category of bidders is explicitly exempted from submitting Bid Security (EMD)?", opts: ["Public Sector Undertakings", "Foreign suppliers", "MSEs and Startups recognized by DPIIT", "Joint Ventures"], ans: 2, rule: "Rule 170(i)", exp: "Micro and Small Enterprises (MSEs) and DPIIT recognized Startups are exempted from furnishing bid security." },
+      { q: "Bid Security is normally required to remain valid for how long beyond final bid validity?", opts: ["30 days", "45 days", "60 days", "90 days"], ans: 1, rule: "Rule 170(i)", exp: "Bid security is normally to remain valid for 45 days beyond the final bid validity period." },
+      { q: "What is the rate of Performance Security for procurement of Goods and Services under Rule 171(i)?", opts: ["2% to 5%", "3% to 5%", "5% to 10%", "10% to 15%"], ans: 1, rule: "Rule 171(i)", exp: "Performance Security for Goods/Consultancy/Non-Consultancy Services should be 3 to 5 per cent of contract value." },
+      { q: "Performance Security should remain valid for how many days beyond completion of all contractual obligations?", opts: ["30 days", "45 days", "60 days", "90 days"], ans: 2, rule: "Rule 171(ii)", exp: "Performance Security should remain valid for 60 days beyond completion of all contractual obligations including warranty." },
+      { q: "What is the maximum limit of advance payment allowed to private firms under Rule 172(1)?", opts: ["20% of contract value", "30% of contract value", "40% of contract value", "50% of contract value"], ans: 1, rule: "Rule 172(1)", exp: "Advance payment to private firms should not exceed thirty per cent of contract value." },
+      { q: "What is the maximum limit of advance payment permissible to a State/Central Govt agency or PSU?", opts: ["30%", "40%", "50%", "60%"], ans: 1, rule: "Rule 172(1)", exp: "Advance payment to a State/Central Government agency or PSU shall not exceed forty per cent of contract value." },
+      { q: "For a maintenance contract, what is the upper limit for advance payment under Rule 172(1)?", opts: ["3 months payable", "6 months payable", "1 year payable", "50% of contract value"], ans: 1, rule: "Rule 172(1)", exp: "In maintenance contracts, advance payment should not exceed amount payable for six months under contract." },
+      { q: "If a bidder quotes NIL charges/consideration in a tender, how must the bid be treated?", opts: ["Accepted as lowest bid", "Referred to Finance Ministry", "Treated as unresponsive and rejected", "Asked to justify"], ans: 2, rule: "Rule 173(i)", exp: "If a firm quotes NIL consideration, the bid shall be treated as unresponsive and will not be considered." },
+      { q: "In a single-offer situation resulting from open tender, offer may be considered valid if:", opts: ["Tender was advertised properly", "Qualification criteria were not restrictive", "Prices are reasonable", "All of the above"], ans: 3, rule: "Rule 173(xx)", exp: "Single bid can be considered if tender was advertised, criteria non-restrictive, and prices reasonable." },
+      { q: "Engagement of retired Government servants is explicitly excluded from the definition of:", opts: ["Non-Consulting Services", "Consulting Services", "Works Contracts", "Maintenance Contracts"], ans: 1, rule: "Rule 177", exp: "Definition of Consulting Services explicitly excludes direct engagement of retired Government servants." },
+      { q: "For consulting services estimated to cost above ₹50 Lakhs, Expression of Interest (EoI) must be published on:", opts: ["GeM / CPPP and Website", "Local Newspapers only", "State Gazette", "Employment News"], ans: 0, rule: "Rule 183(ii)", exp: "When consulting service cost exceeds ₹50 Lakhs, EoI enquiry must be published on GeM/CPPP and website." },
+      { q: "Minimum number of shortlisted consultants required for issuing Request for Proposal (RFP) is:", opts: ["Two", "Three", "Five", "Seven"], ans: 1, rule: "Rule 184", exp: "Number of short-listed consultants should not be less than three." },
+      { q: "Under QCBS for consultancy services, maximum weightage allowed for technical parameters is:", opts: ["50%", "70%", "80%", "90%"], ans: 2, rule: "Rule 192(iv)", exp: "Weightage of technical (non-financial) parameters in QCBS shall in no case exceed 80 percent." },
+      { q: "Which evaluation method is most appropriate for standard or routine consultancy assignments (e.g. audits)?", opts: ["QCBS", "Least Cost System (LCS)", "Single Source Selection", "Fixed Budget"], ans: 1, rule: "Rule 193", exp: "Least Cost System (LCS) is appropriate for routine assignments where well-established methodologies exist." },
+      { q: "Which of the following is categorized as a 'Non-Consulting Service'?", opts: ["Feasibility Study", "Hiring of Vehicles and Security Services", "Accounting and Taxation Advisory", "Management Advice"], ans: 1, rule: "Rule 197", exp: "Non-Consulting Services involve physical deliverables such as hiring vehicles, security, janitor services, etc." },
+      { q: "Under Form GFR-22, which accounts are maintained by the Officer-in-charge of stores?", opts: ["Consumables", "Library Books", "Fixed Assets", "Historical Assets"], ans: 2, rule: "Rule 211(ii)", exp: "Separate accounts shall be kept for Fixed Assets in Form GFR-22." },
+      { q: "As per Rule 213(1), physical verification of Fixed Assets must be conducted at least:", opts: ["Once in six months", "Once in a year", "Once in two years", "Once in three years"], ans: 1, rule: "Rule 213(1)", exp: "Fixed assets should be physically verified at least once in a year." },
+      { q: "For a library having 20,000 to 50,000 volumes, complete physical verification must be done at least:", opts: ["Every year", "Once in two years", "Once in three years", "Sample basis"], ans: 2, rule: "Rule 215(i)", exp: "For libraries having 20,000 to 50,000 volumes, physical verification is required at least once in 3 years." },
+      { q: "In library management, reasonable loss of books per 1,000 volumes issued/consulted per year is:", opts: ["2 volumes", "5 volumes", "10 volumes", "15 volumes"], ans: 1, rule: "Rule 215(ii)", exp: "Loss of 5 volumes per 1,000 volumes issued/consulted in a year may be taken as reasonable." },
+      { q: "Surplus/obsolete goods of residual value ABOVE which threshold must be disposed of via Advertised Tender or Auction?", opts: ["₹1 Lakh", "₹2 Lakhs", "₹4 Lakhs", "₹5 Lakhs"], ans: 2, rule: "Rule 218(i)", exp: "Surplus goods of residual value above ₹4 Lakh should be disposed of by Advertised Tender or Public Auction." },
+      { q: "When disposing of surplus goods via Advertised Tender, ordinary percentage of EMD required is:", opts: ["2% of estimated value", "5% of estimated value", "10% of reserved price", "25% of bid value"], ans: 2, rule: "Rule 219(ii)", exp: "Bid security for advertised tender disposal should ordinarily be 10% of assessed/reserved price." },
+      { q: "In spot public auction disposal, what percentage of earnest money must be collected on the spot?", opts: ["10%", "15%", "Not less than 25%", "50%"], ans: 2, rule: "Rule 220(iv)", exp: "Earnest money (not less than 25% of bid value) must be collected on the spot from successful bidder." },
+      { q: "Price Variation Clause (PVC) is admissible only in long-term contracts where delivery period extends beyond:", opts: ["6 months", "12 months", "18 months", "24 months"], ans: 2, rule: "Rule 225(viii)", exp: "Price Variation Clause can be provided only in long-term contracts extending beyond 18 months." },
+      { q: "Copies of all contracts/agreements for purchase of value of ₹25 Lakhs and above must be sent to:", opts: ["Department of Expenditure", "Audit Officer and/or Accounts Officer", "CVC", "NITI Aayog"], ans: 1, rule: "Rule 225(xiii)", exp: "Copies of contracts of ₹25 Lakhs and above shall be sent to Audit Officer and/or Accounts Officer." },
+      { q: "Where a Ministry challenges an arbitral award, what percentage of award must be paid against Bank Guarantee?", opts: ["50%", "60%", "75%", "100%"], ans: 2, rule: "Rule 227A", exp: "Rule 227A mandates 75% of arbitral award be paid to contractor against Bank Guarantee when challenging award." }
+    ];
+
+    let currentQ = 0;
+    let userAnswers = new Array(50).fill(null);
+    let lifelinesUsed = { '5050': false, 'poll': false, 'expert': false };
+
+    function initQuiz() {
+      buildPrizeTree();
+      loadQuestion();
+    }
+
+    function buildPrizeTree() {
+      const tree = document.getElementById('prize-tree');
+      tree.innerHTML = '';
+      prizes.forEach((p, idx) => {
+        const item = document.createElement('div');
+        item.className = `prize-item ${safeHavens.includes(idx) ? 'safe-haven' : ''}`;
+        item.id = `prize-${idx}`;
+        item.innerHTML = `<span>Q${idx+1}</span> <span>${p}</span>`;
+        tree.appendChild(item);
+      });
+    }
+
+    function loadQuestion() {
+      const qData = questions[currentQ];
+      document.getElementById('q-counter').innerText = `Question ${currentQ + 1} / 50`;
+      document.getElementById('progress-fill').style.width = `${((currentQ + 1) / 50) * 100}%`;
+      document.getElementById('question-text').innerText = `${currentQ + 1}. ${qData.q}`;
+
+      for (let i = 0; i < 4; i++) {
+        const btn = document.querySelectorAll('.opt-btn')[i];
+        document.getElementById(`opt${i}`).innerText = qData.opts[i];
+        btn.className = 'opt-btn';
+        btn.style.display = 'flex';
+        btn.disabled = false;
+      }
+
+      // Update Prize Ladder
+      document.querySelectorAll('.prize-item').forEach(el => el.classList.remove('active', 'completed'));
+      for (let i = 0; i < currentQ; i++) {
+        document.getElementById(`prize-${i}`).classList.add('completed');
+      }
+      document.getElementById(`prize-${currentQ}`).classList.add('active');
+      document.getElementById(`prize-${currentQ}`).scrollIntoView({ block: 'nearest' });
+
+      // Reset / Load Explanation
+      const expCard = document.getElementById('exp-card');
+      if (userAnswers[currentQ] !== null) {
+        showFeedback(userAnswers[currentQ]);
+      } else {
+        expCard.style.display = 'none';
+      }
+
+      // Nav Buttons
+      document.getElementById('prev-btn').disabled = (currentQ === 0);
+      document.getElementById('next-btn').disabled = (userAnswers[currentQ] === null);
+      if (currentQ === 49 && userAnswers[49] !== null) {
+        document.getElementById('next-btn').innerText = "VIEW RESULT →";
+      } else {
+        document.getElementById('next-btn').innerText = "NEXT QUESTION →";
+      }
+    }
+
+    function selectOption(index) {
+      if (userAnswers[currentQ] !== null) return;
+      userAnswers[currentQ] = index;
+      showFeedback(index);
+      document.getElementById('next-btn').disabled = false;
+    }
+
+    function showFeedback(selectedIdx) {
+      const qData = questions[currentQ];
+      const btns = document.querySelectorAll('.opt-btn');
+
+      btns.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === qData.ans) btn.classList.add('correct');
+        if (idx === selectedIdx && selectedIdx !== qData.ans) btn.classList.add('incorrect');
+      });
+
+      const expCard = document.getElementById('exp-card');
+      const statusEl = document.getElementById('exp-status');
+      if (selectedIdx === qData.ans) {
+        statusEl.innerText = "✓ CORRECT ANSWER!";
+        statusEl.className = "exp-status correct";
+      } else {
+        statusEl.innerText = `✗ INCORRECT (Correct: ${String.fromCharCode(65 + qData.ans)})`;
+        statusEl.className = "exp-status incorrect";
+      }
+
+      document.getElementById('exp-rule').innerText = `GFR Reference: ${qData.rule}`;
+      document.getElementById('exp-text').innerText = qData.exp;
+      expCard.style.display = 'block';
+    }
+
+    function nextQuestion() {
+      if (currentQ < 49) {
+        currentQ++;
+        loadQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function prevQuestion() {
+      if (currentQ > 0) {
+        currentQ--;
+        loadQuestion();
+      }
+    }
+
+    function use5050() {
+      if (lifelinesUsed['5050'] || userAnswers[currentQ] !== null) return;
+      lifelinesUsed['5050'] = true;
+      document.getElementById('life-5050').disabled = true;
+
+      const qData = questions[currentQ];
+      let removed = 0;
+      const btns = document.querySelectorAll('.opt-btn');
+      for (let i = 0; i < 4; i++) {
+        if (i !== qData.ans && removed < 2) {
+          btns[i].style.display = 'none';
+          removed++;
+        }
+      }
+    }
+
+    function usePoll() {
+      if (lifelinesUsed['poll'] || userAnswers[currentQ] !== null) return;
+      lifelinesUsed['poll'] = true;
+      document.getElementById('life-poll').disabled = true;
+
+      const qData = questions[currentQ];
+      let poll = [10, 10, 10, 10];
+      poll[qData.ans] = 70;
+
+      showModal("Audience Poll Results", `
+        Option A: ${poll[0]}%<br>
+        Option B: ${poll[1]}%<br>
+        Option C: ${poll[2]}%<br>
+        Option D: ${poll[3]}%
+      `);
+    }
+
+    function useExpert() {
+      if (lifelinesUsed['expert'] || userAnswers[currentQ] !== null) return;
+      lifelinesUsed['expert'] = true;
+      document.getElementById('life-expert').disabled = true;
+
+      const qData = questions[currentQ];
+      showModal("Ask The Expert", `<b>Expert Advice:</b> "Refer closely to <b>${qData.rule}</b>. Pay attention to specific monetary thresholds or standard procedural timelines."`);
+    }
+
+    function showModal(title, body) {
+      document.getElementById('modal-title').innerText = title;
+      document.getElementById('modal-body').innerHTML = body;
+      document.getElementById('lifeline-modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('lifeline-modal').style.display = 'none';
+    }
+
+    function showResults() {
+      document.getElementById('quiz-stage').style.display = 'none';
+      document.getElementById('result-screen').style.display = 'block';
+
+      let correctCount = 0;
+      userAnswers.forEach((ans, idx) => {
+        if (ans === questions[idx].ans) correctCount++;
+      });
+
+      const percentage = (correctCount / 50) * 100;
+      document.getElementById('res-score-text').innerText = `You answered ${correctCount} / 50 questions correctly (${percentage.toFixed(0)}%)`;
+
+      let level = "MORE PRACTICE REQUIRED";
+      if (percentage >= 90) level = "EXCELLENT";
+      else if (percentage >= 75) level = "VERY GOOD";
+      else if (percentage >= 60) level = "GOOD";
+      else if (percentage >= 40) level = "NEEDS PRACTICE";
+
+      document.getElementById('res-level').innerText = `EXAM PREPARATION LEVEL: ${level}`;
+    }
+
+    function restartQuiz() {
+      currentQ = 0;
+      userAnswers.fill(null);
+      lifelinesUsed = { '5050': false, 'poll': false, 'expert': false };
+      document.querySelectorAll('.lifeline-btn').forEach(btn => btn.disabled = false);
+      document.getElementById('quiz-stage').style.display = 'grid';
+      document.getElementById('result-screen').style.display = 'none';
+      loadQuestion();
+    }
+
+    window.onload = initQuiz;
+  </script>
+</body>
+</html>
